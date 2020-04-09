@@ -1,10 +1,19 @@
 All?
 www.puzzledragonx.com/en/monsterbook.asp?r=5,6&s=47,48,53,37,107,197,54,13,44,24,98,14,68,86&b1=1
 
-
+DROPS ================================================================================================
+All combined:
+http://puzzledragonx.com/en/monsterbook.asp?r=3,4,5&s=47,48,53,37,107,29,94,81,8,13,44,9,11,80,24,98,14,68,12,66,10,30,31,43,33,86,27,82,104&b1=1#view
+Fodder drops:
+http://puzzledragonx.com/en/monsterbook.asp?r=3,4,5&s=29,94,84,81,8,9,12,66,10,31,33,27,82,104&b1=1#view
 
 OG Gods and 5* drops:
 http://puzzledragonx.com/en/monsterbook.asp?r=5&s=47,48,53,37,107,13,44,24,98,14,68,43,86&b1=1#view
+
+Need to remove:
+- first form of healer girls
+- remove fairies?
+DROPS ================================================================================================
 
 OG Gods and 5* + Evos:
 http://puzzledragonx.com/en/monsterbook.asp?r=5,6,7,8&s=47,48,53,37,107,81,8,13,44,24,98,14,68,43,86,27&b1=1#view
