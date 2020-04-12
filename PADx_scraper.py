@@ -8,6 +8,9 @@ pdx_url = "http://puzzledragonx.com/en/img/monster/MONS_"
 # Black-list IDs
 black_listed = ('94', '92', '90', '88', '96', '681')
 
+# Black-listed 5* (disable this when parsing 6*)
+black_listed_gods = ('1424', '1589', '2103', '1372', '1241')
+
 def remove_non_ascii_1(text):
     """
     Remove extended ASCII characters resulting from trying to
@@ -45,7 +48,7 @@ def scrape(rem_soup, file):
 
         # Build URL for non-blacklisted monsters
         mon_nbr = mon_id[14:].strip('.png')
-        if mon_nbr in black_listed:
+        if mon_nbr in black_listed or mon_nbr in black_listed_gods or int(mon_nbr) >= 1946:
             continue;
         mon_url = f"{pdx_url}{mon_nbr}.jpg"
             
@@ -74,7 +77,7 @@ def main():
     # Extract and format HTML from URL
     rem_src = requests.get(url)
     rem_plain_txt = rem_src.text
-    rem_soup = BeautifulSoup(rem_plain_txt)
+    rem_soup = BeautifulSoup(rem_plain_txt, features="html.parser")
     print("Scrapping...")
 
     scrape(rem_soup, file)
