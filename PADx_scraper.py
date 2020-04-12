@@ -5,6 +5,9 @@ import urllib.request
 # URL header to build
 pdx_url = "http://puzzledragonx.com/en/img/monster/MONS_"
 
+# Black-list IDs
+black_listed = ('94', '92', '90', '88', '96', '681')
+
 def remove_non_ascii_1(text):
     """
     Remove extended ASCII characters resulting from trying to
@@ -12,13 +15,14 @@ def remove_non_ascii_1(text):
     """
     return ''.join(i for i in text if ord(i)<128)
 
-def scrape(rem_soup):
+def scrape(rem_soup, file):
     """
     Take in the formatted HTML, scrape for the desired elements,
     and write to a file generating all the desired URLS
     """
     # Open file to write output to
-    f_rem_urls = open("rem_urls.txt", "w")
+    # f_rem_urls = open("rem_urls.txt", "w")
+    f_rem_urls = open(f"{file}", "w+")
 
     # Traverse HTML of all monsters queried
     for link in rem_soup.find_all("img", {"class": "onload"}):
@@ -39,13 +43,16 @@ def scrape(rem_soup):
             mon_name_unfiltered = ' '.join(mon_name_str)
             mon_name = remove_non_ascii_1(mon_name_unfiltered).rstrip()
 
-        # Build URL
+        # Build URL for non-blacklisted monsters
         mon_nbr = mon_id[14:].strip('.png')
+        if mon_nbr in black_listed:
+            continue;
         mon_url = f"{pdx_url}{mon_nbr}.jpg"
             
-        f_rem_urls.write(f"{mon_name}: {mon_url}\n") 
+        f_rem_urls.write(f"{mon_url}@ {mon_name}\n") 
 
     f_rem_urls.close()
+    print("Finished!")
 
 def main():
     """
@@ -60,12 +67,17 @@ def main():
     # Get URL to more GFE's
     url_gfe2 = "http://puzzledragonx.com/en/monsterbook.asp?r=6&s=54&b1=1#view"
 
+    # Request URL to scrape from user
+    url = input("Enter PADx URL to scrape: ")
+    file = input("Destination file: ")
+
     # Extract and format HTML from URL
-    rem_src = requests.get(url_rem)
+    rem_src = requests.get(url)
     rem_plain_txt = rem_src.text
     rem_soup = BeautifulSoup(rem_plain_txt)
+    print("Scrapping...")
 
-    scrape(rem_soup)
+    scrape(rem_soup, file)
 
 if __name__ == "__main__":
     main()
