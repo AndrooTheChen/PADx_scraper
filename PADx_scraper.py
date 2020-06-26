@@ -1,9 +1,12 @@
 import requests
+import re
 from bs4 import BeautifulSoup
 import urllib.request
+import time
 
 # URL header to build
 pdx_url = "http://puzzledragonx.com/en/img/monster/MONS_"
+pdx_mon_url = "http://puzzledragonx.com/en/monster.asp?n="
 
 # Black-list IDs
 black_listed = ('94', '92', '90', '88', '96', '681')
@@ -18,44 +21,80 @@ def remove_non_ascii_1(text):
     """
     return ''.join(i for i in text if ord(i)<128)
 
-def scrape(rem_soup, file):
+def scrape(url, file):
     """
     Take in the formatted HTML, scrape for the desired elements,
     and write to a file generating all the desired URLS
     """
     # Open file to write output to
     # f_rem_urls = open("rem_urls.txt", "w")
-    f_rem_urls = open(f"{file}", "w+")
 
+    rem_src = requests.get(url)
+    rem_plain_txt = rem_src.text
+    rem_soup = BeautifulSoup(rem_plain_txt, features="html.parser")
+
+    f_rem_urls = open(f"{file}", "w+")
+    links = rem_soup.find_all(class_= "onload")
+    numlinks = len(links)
+    print(f"{numlinks} monsters ready to be scraped")
     # Traverse HTML of all monsters queried
-    for link in rem_soup.find_all("img", {"class": "onload"}):
+    printProgressBar(0, numlinks, prefix = 'Progress: ', suffix = 'Complete', length = 50)
+    for i, link in enumerate(links):
         mon_id = link.get('data-original')
         if mon_id is None:
             continue
-
-        mon_name_struct = link.get('title').split()
-
-        # Gets Monster name : URL
-        if ('Active:' not in mon_name_struct):
-            # Edge case for monster Manekimewdra which doesn't have an Active skill
-            mon_name = mon_name_struct[1]
-        else:
-            # Filter out name of monster
-            last_idx = mon_name_struct.index('Active:')
-            mon_name_str = mon_name_struct[1:last_idx-1]
-            mon_name_unfiltered = ' '.join(mon_name_str)
-            mon_name = remove_non_ascii_1(mon_name_unfiltered).rstrip()
-
         # Build URL for non-blacklisted monsters
         mon_nbr = mon_id[14:].strip('.png')
         if mon_nbr in black_listed or mon_nbr in black_listed_gods or int(mon_nbr) >= 1946:
-            continue;
-        mon_url = f"{pdx_url}{mon_nbr}.jpg"
-            
-        f_rem_urls.write(f"{mon_url}@ {mon_name}\n") 
+            continue
+        mon_img = f"{pdx_url}{mon_nbr}.jpg"
+        mon_url = f"{pdx_mon_url}{mon_nbr}"
+        mon_src = requests.get(mon_url)
+        mon_txt = mon_src.text
+        mon_soup = BeautifulSoup(mon_txt, features="html.parser")
+        #series
+        mon_s = mon_soup.find_all("span", string = re.compile("Series"))
+        mon_series = ""
+        for s in mon_s:
+            mon_series += s.string + "/"
+        mon_series = mon_series[:-1]
+        mon_m = mon_soup.find_all("meta", {"name":"description"})
+        mon_meta = mon_m[0].get('content').split(" monster")
+        #name and attributes/elements
+        [mon_name, mon_att] = mon_meta[0].split(" is a ")
+        #rarity and types
+        [mon_rarity, mon_types] = mon_meta[1].split(" stars ")
+        mon_att = mon_att.replace(" and ", "/")
+        mon_rarity = f"{mon_rarity[-1:]} stars"
 
+        f_rem_urls.write(f"{mon_img}@ {mon_name}@ {mon_att}@ {mon_rarity}@ {mon_types}@ {mon_series}\n") 
+
+        time.sleep(0.1)
+        printProgressBar(i + 1, numlinks, prefix = 'Progress: ', suffix = 'Complete', length = 50)
+        
     f_rem_urls.close()
     print("Finished!")
+
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
 
 def main():
     """
@@ -75,12 +114,12 @@ def main():
     file = input("Destination file: ")
 
     # Extract and format HTML from URL
-    rem_src = requests.get(url)
-    rem_plain_txt = rem_src.text
-    rem_soup = BeautifulSoup(rem_plain_txt, features="html.parser")
-    print("Scrapping...")
-
-    scrape(rem_soup, file)
+    
+    print("Scraping...")
+    start = time.perf_counter()
+    scrape(url, file)
+    end = time.perf_counter()
+    print(f"Scraping completed in {end - start} seconds.")
 
 if __name__ == "__main__":
     main()
