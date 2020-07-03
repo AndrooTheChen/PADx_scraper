@@ -14,13 +14,6 @@ black_listed = ('94', '92', '90', '88', '96', '681')
 # Black-listed 5* (disable this when parsing 6*)
 black_listed_gods = ('1424', '1589', '2103', '1372', '1241')
 
-def remove_non_ascii_1(text):
-    """
-    Remove extended ASCII characters resulting from trying to
-    translate JP names to ENG
-    """
-    return ''.join(i for i in text if ord(i)<128)
-
 def scrape(url, file):
     """
     Take in the formatted HTML, scrape for the desired elements,
@@ -36,10 +29,11 @@ def scrape(url, file):
     f_rem_urls = open(f"{file}", "w+")
     links = rem_soup.find_all(class_= "onload")
     numlinks = len(links)
+    count=0
     print(f"{numlinks} monsters ready to be scraped")
     # Traverse HTML of all monsters queried
-    printProgressBar(0, numlinks, prefix = 'Progress: ', suffix = 'Complete', length = 50)
     for i, link in enumerate(links):
+        printProgressBar(i, numlinks, prefix = 'Progress: ', suffix = 'Complete', length = 50)
         mon_id = link.get('data-original')
         if mon_id is None:
             continue
@@ -66,28 +60,17 @@ def scrape(url, file):
         [mon_rarity, mon_types] = mon_meta[1].split(" stars ")
         mon_att = mon_att.replace(" and ", "/")
         mon_rarity = f"{mon_rarity[-1:]} stars"
-
+        #print(f"{mon_img}@ {mon_name}@ {mon_att}@ {mon_rarity}@ {mon_types}@ {mon_series}\n" )
         f_rem_urls.write(f"{mon_img}@ {mon_name}@ {mon_att}@ {mon_rarity}@ {mon_types}@ {mon_series}\n") 
-
+        count += 1
         time.sleep(0.1)
         printProgressBar(i + 1, numlinks, prefix = 'Progress: ', suffix = 'Complete', length = 50)
-        
+    
+    printProgressBar(numlinks, numlinks, prefix = 'Progress: ', suffix = 'Complete', length = 50)
     f_rem_urls.close()
-    print("Finished!")
+    print(f"Finished! {count} monsters successfully scraped.")
 
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-    """
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
@@ -119,7 +102,7 @@ def main():
     start = time.perf_counter()
     scrape(url, file)
     end = time.perf_counter()
-    print(f"Scraping completed in {end - start} seconds.")
+    print("Scraping completed in {:.2f} seconds.\n" .format(end - start))
 
 if __name__ == "__main__":
     main()
