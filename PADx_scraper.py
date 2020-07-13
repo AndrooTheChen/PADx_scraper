@@ -94,16 +94,10 @@ def imageScrape(ifile, dfoldr):
     if not os.path.exists(ifile):
         print(f"No such file or directory: '{ifile}'")
         return 1
-    
-    if not os.path.exists(dest):
-        os.makedirs(dest)
-        os.makedirs(dest+"/monster")
-        os.makedirs(dest+"/thumbnail")
-    else:
-        if not os.path.exists(dest+"/monster"):
-            os.makedirs(dest+"/monster")
-        if not os.path.exists(dest+"/thumbnail"):
-            os.makedirs(dest+"/thumbnail")
+    monpath = os.path.join(dest,"monster")
+    tnpath = os.path.join(dest,"thumbnail")
+    if not os.path.exists(monpath): os.makedirs(monpath)
+    if not os.path.exists(tnpath):  os.makedirs(tnpath)
 
     #Reads in input file
     rfile= open(f"{ifile}", "r")
@@ -113,7 +107,7 @@ def imageScrape(ifile, dfoldr):
     numLines = len(lines)
     count=0
     print(f"{numLines} monsters ready to be scraped")
-    # Traverse all monsters in ifile and save monster and thumbnail images in local directory
+    # Traverses through monsters in ifile and save monsters and thumbnail images in dest directory
     for i, line in enumerate(lines):
         printProgressBar(i, numLines, prefix = 'Progress: ', suffix = 'Complete', length = 50)
         
