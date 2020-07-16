@@ -3,6 +3,7 @@ import re
 from bs4 import BeautifulSoup
 import urllib.request
 import time
+import os
 
 # URL header to build
 pdx_url = "http://puzzledragonx.com/en/img/monster/MONS_"
@@ -14,19 +15,28 @@ black_listed = ('94', '92', '90', '88', '96', '681')
 # Black-listed 5* (disable this when parsing 6*)
 black_listed_gods = ('1424', '1589', '2103', '1372', '1241')
 
-def scrape(url, file):
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+
+def scrape(url, dfile):
     """
     Take in the formatted HTML, scrape for the desired elements,
-    and write to a file generating all the desired URLS
+    and write to a dfile generating all the desired URLS
     """
-    # Open file to write output to
+    # Open dfile to write output to
     # f_rem_urls = open("rem_urls.txt", "w")
 
     rem_src = requests.get(url)
     rem_plain_txt = rem_src.text
     rem_soup = BeautifulSoup(rem_plain_txt, features="html.parser")
 
-    f_rem_urls = open(f"{file}", "w+")
+    f_rem_urls = open(f"{dfile}", "w+")
     links = rem_soup.find_all(class_= "onload")
     numlinks = len(links)
     count=0
@@ -70,37 +80,104 @@ def scrape(url, file):
     f_rem_urls.close()
     print(f"Finished! {count} monsters successfully scraped.")
 
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
-    # Print New Line on Complete
-    if iteration == total: 
-        print()
+def imageScrape(ifile, dfoldr):
+    """
+    Take in the formatted HTML, scrape for the desired elements,
+    and write to a dfile generating all the desired URLS
+    """
+    # Checks existence of input file and output destination
+    # Creates output folder(s) if DNE
+    dest = dfoldr
+    if dest == "":
+        dest = "img"
+
+    if not os.path.exists(ifile):
+        print(f"No such file or directory: '{ifile}'")
+        return 1
+    monpath = os.path.join(dest,"monster")
+    tnpath = os.path.join(dest,"thumbnail")
+    if not os.path.exists(monpath): os.makedirs(monpath)
+    if not os.path.exists(tnpath):  os.makedirs(tnpath)
+
+    #Reads in input file
+    rfile= open(f"{ifile}", "r")
+    lines = rfile.readlines()
+
+    iCantCount = len("http://puzzledragonx.com/en/img/")
+    numLines = len(lines)
+    count=0
+    print(f"{numLines} monsters ready to be scraped")
+    # Traverses through monsters in ifile and save monsters and thumbnail images in dest directory
+    for i, line in enumerate(lines):
+        printProgressBar(i, numLines, prefix = 'Progress: ', suffix = 'Complete', length = 50)
+        
+        #path: img/monster/MONS_{number}.jpg
+        #saved as: {dest}/monster/MONS_{number}.jpg
+        link = line.split("@")[0]
+        imgName = link[iCantCount:]
+        imgData = requests.get(link).content
+        with open(f"{dest}/{imgName}", 'wb') as handler:
+            handler.write(imgData)
+        
+        #path: img/thumbnail/{number}.png
+        #saved as: {dest}/thumbnail/{number}.png
+        thumbLink = "thumbnail/".join(link.split("monster/MONS_"))[:-3] + "png"
+        thumbImgName = thumbLink[iCantCount:]
+        thumbImgData = requests.get(thumbLink).content
+        with open(f"{dest}/{thumbImgName}", 'wb') as handler:
+            handler.write(thumbImgData)
+        
+        count += 1
+        time.sleep(0.1)
+        printProgressBar(i + 1, numLines, prefix = 'Progress: ', suffix = 'Complete', length = 50)
+    
+    printProgressBar(numLines, numLines, prefix = 'Progress: ', suffix = 'Complete', length = 50)
+    print(f"Finished! {count} monsters successfully scraped.")
+
+    return 0
+
 
 def main():
     """
     main
     """
     # Get URL to all fodder and 5* gods
-    url_rem = "http://puzzledragonx.com/en/monsterbook.asp?r=3,4,5&s=47,48,53,37,107,29,94,81,8,13,44,9,11,80,24,98,14,68,12,66,10,30,31,43,33,86,27,82,104&b1=1#view"
+    #url_rem = "http://puzzledragonx.com/en/monsterbook.asp?r=3,4,5&s=47,48,53,37,107,29,94,81,8,13,44,9,11,80,24,98,14,68,12,66,10,30,31,43,33,86,27,82,104&b1=1#view"
 
     # Get URL to GFE's (separated in two categories)
-    url_gfe1 = "http://puzzledragonx.com/en/monsterbook.asp?r=5&s=197&b1=1#view"
+    #url_gfe1 = "http://puzzledragonx.com/en/monsterbook.asp?r=5&s=197&b1=1#view"
 
     # Get URL to more GFE's
-    url_gfe2 = "http://puzzledragonx.com/en/monsterbook.asp?r=6&s=54&b1=1#view"
+    #url_gfe2 = "http://puzzledragonx.com/en/monsterbook.asp?r=6&s=54&b1=1#view"
 
-    # Request URL to scrape from user
-    url = input("Enter PADx URL to scrape: ")
-    file = input("Destination file: ")
+    #Michael's scrape URL: http://puzzledragonx.com/en/monsterbook.asp?e1=3&r=5&s=47&b1=1#view
+    # Select mode
+    print("\nModes of operation:\n 1) Scrape info\n 2) Scrape images & download\n")
+    mode = input("Select mode (1 or 2): ")
+    operation = scrape
+    url = ""
+    dfile = ""
+
+    if mode == "1":
+        # Request URL to scrape from user
+        url = input("Enter PADx URL to scrape: ")
+        dfile = input("Destination file: ")
+    elif mode == "2":
+        # Request files from user
+        url = input("Info-scraped file: ")
+        dfile = input("Destination of images (leave empty for standard path): ")
+        operation = imageScrape
+    else:
+        print("Invalid input. Please just use 1 or 2. Exiting.")
+        return
 
     # Extract and format HTML from URL
     
     print("Scraping...")
     start = time.perf_counter()
-    scrape(url, file)
+    if (operation(url, dfile)):
+        print("Exiting.")
+        return
     end = time.perf_counter()
     print("Scraping completed in {:.2f} seconds.\n" .format(end - start))
 
